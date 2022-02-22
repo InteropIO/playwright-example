@@ -1,4 +1,4 @@
-This repo contains a sample Glue42 end-to-end test written with [Playwright](https://playwright.dev/)
+This repo contains a sample Glue42 end-to-end test created using [Playwright](https://playwright.dev/)
 
 To run the test:
 1. Run the following command to install dependencies
