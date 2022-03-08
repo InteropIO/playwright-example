@@ -1,15 +1,21 @@
-This repo contains a sample Glue42 end-to-end test created using [Playwright](https://playwright.dev/)
+# Testing Glue42 Apps with Playwright
+
+This repo contains a sample Glue42 end-to-end test created using [Playwright](https://playwright.dev/).
 
 To run the test:
-1. Run the following command to install dependencies
-```sh
-npm i
+
+1. Install the dependencies:
+
+```cmd
+npm install
 ```
-2. Open test.spec.js
-3. Make sure **gdDir** and **gdExePath** variables are correct for your deployment
-4. Run the following command to execute the test
-```sh
+
+2. Open the `test.spec.js` file and make sure that the `gdDir` and `gdExePath` variables are set correctly for your [**Glue42 Enterprise**](https://glue42.com/enterprise/) deployment.
+
+4. Execute the test:
+
+```cmd
 npm run test
 ```
 
-You can find more info about Playwright in their [docs](https://playwright.dev/docs/intro)
+*For more in-depth information on using Playwright, see the [Playwright official documentation](https://playwright.dev/docs/intro).*
