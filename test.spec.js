@@ -37,14 +37,14 @@ const waitForAppToLoad = (appName, electronApp) => {
       try {
         const glue42gd = await page.evaluate(`glue42gd`);
         if (appName === glue42gd.application) {
-          page.on('load', () => {
-            resolve({
-              app: glue42gd.application,
-              instance: glue42gd.instance,
-              glue42gd,
-              page
-            });
-          })
+          await page.waitForLoadState();
+
+          resolve({
+            app: glue42gd.application,
+            instance: glue42gd.instance,
+            glue42gd,
+            page
+          });
         }
       } catch (e) {
         // do nothing
