@@ -9,7 +9,30 @@ setDefaultResultOrder("ipv4first");
 const ioDesktopDir = `${process.env.LocalAppData}\\interop.io\\io.Connect Desktop\\Desktop`;
 const desktopExePath = path.join(ioDesktopDir, "io-connect-desktop.exe");
 
-test.setTimeout(60000);
+test.setTimeout(40000);
+
+test("Launch Dev Tools from the Glue42 Application Manager and wait for it to appear.", async () => {
+  // Step 1: Start IO.Desktop Enterprise.
+  const electronApp = await electron.launch({
+    executablePath: desktopExePath,
+    cwd: ioDesktopDir
+  });
+
+  // Step 2: Wait for the Glue42 Application Manager to appear.
+  const { page } = await waitForAppToLoad("io-connect-desktop-toolbar", electronApp);
+
+  // Step 3: Click on the element with an "apps" ID to expand the Applications view.
+  await page.click("id=apps");
+
+  // Step 4: Type "dev tools" in the app search field.
+  await page.type("id=app-search", "dev tools");
+
+  // Step 5: Click on the result.
+  await page.click("id=search-results");
+
+  // Step 6: Wait for the Dev Tools app to appear.
+  await waitForAppToLoad("DevTools", electronApp);
+});
 
 test('open two apps, snap them together and manipulate the formed group via the group frame buttons', async () => {
   // step 1 Start IO.Desktop Enterprise
@@ -29,7 +52,7 @@ test('open two apps, snap them together and manipulate the formed group via the 
 
   // step 4 snap windows to create a group
   await win2.snap(win1.id, "right");
-  
+
   // step 5 get the groupId of the windows and utilizing the helper method get the page for the webGroup
   const groupId = win1.groupId;
   const webGroup = await getWebGroup(groupId, electronApp);
