@@ -12,6 +12,7 @@
     "playwright": "^1.19.1"
   },
   "dependencies": {
+    "@interopio/desktop": "^6.2.2",
     "@playwright/test": "^1.19.1"
   }
 }
