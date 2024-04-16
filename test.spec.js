@@ -1,118 +1,124 @@
-const { _electron: electron } = require('playwright');
-const { test, expect } = require('@playwright/test');
-const { setDefaultResultOrder } = require('dns');
-
+const { _electron: electron } = require("playwright");
+const { test, expect } = require("@playwright/test");
+const { setDefaultResultOrder } = require("dns");
 const path = require("path");
 const IODesktop = require("@interopio/desktop");
 
 setDefaultResultOrder("ipv4first");
-const ioDesktopDir = `${process.env.LocalAppData}\\interop.io\\io.Connect Desktop\\Desktop`;
-const desktopExePath = path.join(ioDesktopDir, "io-connect-desktop.exe");
+
+const platformDir = `${process.env.LocalAppData}\\interop.io\\io.Connect Desktop\\Desktop`;
+const executablePath = path.join(platformDir, "io-connect-desktop.exe");
+
+let electronApp;
+let io;
 
 test.setTimeout(40000);
 
-test("Launch Dev Tools from the Glue42 Application Manager and wait for it to appear.", async () => {
-  // Step 1: Start IO.Desktop Enterprise.
-  const electronApp = await electron.launch({
-    executablePath: desktopExePath,
-    cwd: ioDesktopDir
-  });
-
-  // Step 2: Wait for the Glue42 Application Manager to appear.
-  const { page } = await waitForAppToLoad("io-connect-desktop-toolbar", electronApp);
-
-  // Step 3: Click on the element with an "apps" ID to expand the Applications view.
-  await page.click("id=apps");
-
-  // Step 4: Type "dev tools" in the app search field.
-  await page.type("id=app-search", "dev tools");
-
-  // Step 5: Click on the result.
-  await page.click("id=search-results");
-
-  // Step 6: Wait for the Dev Tools app to appear.
-  await waitForAppToLoad("DevTools", electronApp);
-});
-
-test('open two apps, snap them together and manipulate the formed group via the group frame buttons', async () => {
-  // step 1 Start IO.Desktop Enterprise
-  const electronApp = await electron.launch({
-    executablePath: desktopExePath,
-    cwd: ioDesktopDir
-  });
-
-  // step 2 Wait for application manager to appear
-  const { page } = await waitForAppToLoad("io-connect-desktop-toolbar", electronApp);
-
-  // step 3 open two windows which will be used for testing via the desktop API
-  const desktop = await initDesktop(page);
-  const url = "https://docs.interop.io/desktop/getting-started/what-is-io-connect-desktop/general-overview/index.html";
-  const win1 = await desktop.windows.open("win1", url);
-  const win2 = await desktop.windows.open("win2", url);
-
-  // step 4 snap windows to create a group
-  await win2.snap(win1.id, "right");
-
-  // step 5 get the groupId of the windows and utilizing the helper method get the page for the webGroup
-  const groupId = win1.groupId;
-  const webGroup = await getWebGroup(groupId, electronApp);
-
-  // step 6 utilzing the page of the webgroup, maximize, restore and close the webgroup entirely
-  await webGroup.locator(`#t42-group-caption-bar-standard-buttons-maximize-${groupId}`).click();
-  await webGroup.waitForSelector(`#t42-group-caption-bar-standard-buttons-restore-${groupId}`);
-  await webGroup.locator(`#t42-group-caption-bar-standard-buttons-restore-${groupId}`).click();
-  await webGroup.locator(`#t42-group-caption-bar-standard-buttons-close-${groupId}`).click();
-});
-
-// method to initialize IO desktop so it can be used within the testing environment
-const initDesktop = async (page) => {
-  // In this scenario, we are utilzing the page of the first shell application we have started to obtain a gwToken
-  const gwToken = await page.evaluate('glue42gd.getGWToken()');
-  return await IODesktop({ layouts: 'full', auth: { gatewayToken: gwToken }, activities: false });
-}
-
-// helper method that waits for a IO.Desktop app to appear
-const waitForAppToLoad = (appName, electronApp) => {
-  return new Promise((resolve, reject) => {
-    electronApp.on('window', async (page) => {
-      try {
-        const glue42gd = await page.evaluate(`glue42gd`);
-        if (appName === glue42gd.application) {
-          page.on('load', () => {
-            resolve({
-              app: glue42gd.application,
-              instance: glue42gd.instance,
-              glue42gd,
-              page
-            });
-          })
-        }
-      } catch (e) {
-        // add proper logging
-      }
+// Start io.Connect Desktop, wait for the io.Connect launcher to load,
+// and initialize the `@interopio/desktop` library before the tests.
+test.beforeAll(async () => {
+    // Start io.Connect Desktop.
+    electronApp = await electron.launch({
+        executablePath: executablePath,
+        cwd: platformDir
     });
-  });
-}
 
-// helper method to get the webGroup page to access it's selectors
+    // Wait for the io.Connect launcher to appear.
+    const { page } = await waitForAppToLoad("io-connect-desktop-toolbar", electronApp);
+
+    // Initialize the `@interopio/desktop` library.
+    io = await initDesktop(page);
+});
+
+test("Launch Client List and click the button to open Client Portfolio.", async () => {
+    // Open the "Client List" app using the `@interopio/desktop` library and wait for it to appear.
+    io.appManager.application("channelsclientlist").start();
+
+    const { page } = await waitForAppToLoad("channelsclientlist", electronApp);
+
+    // Click on the "Open Client Portfolio" button.
+    page.locator("button.btn.btn-icon.btn-primary.btn-borderless").click();
+
+    // Wait for the "Client Portfolio" app to appear.
+    await waitForAppToLoad("channelsclientportfolio", electronApp);
+});
+
+test("Open two windows, snap them together, and manipulate the window group via its frame buttons.", async () => {
+    // Open two windows using the `@interopio/desktop` library.
+    const url = "https://docs.interop.io/";
+    const win1 = await io.windows.open("win1", url);
+    const win2 = await io.windows.open("win2", url);
+
+    // Snap the opened windows to each other to create a window group.
+    await win2.snap(win1.id, "right");
+
+    // Get the `groupId` of the windows and retrieve the Web Group App.
+    const groupId = win1.groupId;
+    const webGroup = await getWebGroup(groupId, electronApp);
+
+    // Maximize, restore and close the Wb Group App via the standard frame buttons.
+    await webGroup.locator(`#t42-group-caption-bar-standard-buttons-maximize-${groupId}`).click();
+    await webGroup.waitForSelector(`#t42-group-caption-bar-standard-buttons-restore-${groupId}`);
+    await webGroup.locator(`#t42-group-caption-bar-standard-buttons-restore-${groupId}`).click();
+    await webGroup.locator(`#t42-group-caption-bar-standard-buttons-close-${groupId}`).click();
+});
+
+// Helper for initializing the `@interopio/desktop` library so that it can be used in the tests.
+const initDesktop = async (page) => {
+    // Using the page of the first started shell app to obtain a Gateway token
+    // for the library to be able to connect to the io.Connect Gateway.
+    const gwToken = await page.evaluate("iodesktop.getGWToken()");
+    // Initializing the library.
+    const io = await IODesktop({ auth: { gatewayToken: gwToken } });
+
+    return io;
+};
+
+// Helper for awaiting an io.Connect app to load.
+const waitForAppToLoad = (appName, electronApp) => {
+    return new Promise((resolve, reject) => {
+        electronApp.on("window", async (page) => {
+            try {
+                // Check for the `iodesktop` service object injected in the page.
+                const iodesktop = await page.evaluate("window.iodesktop");
+
+                // Check the app name against the name contained in the `iodekstop` service object.
+                if (iodesktop && appName === iodesktop.applicationName) {
+                    page.on("load", () => {
+                        resolve({
+                            app: iodesktop.applicationName,
+                            instance: iodesktop.instance,
+                            iodesktop,
+                            page
+                        });
+                    })
+                };
+            } catch (error) {
+                // Add proper logging.
+            };
+        });
+    });
+};
+
+// Helper for retrieving the io.Connect Web Group App.
 const getWebGroup = async (groupId, electronApp) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const windows = electronApp.windows();
-      for (let index = 0; index < windows.length; index++) {
-        const page = windows[index];
-        const glue42webGroups = await page.evaluate(
-          `if (window.glue42webGroups) {
-                  glue42webGroups
-              }`
-        );
-        if (glue42webGroups && groupId === glue42webGroups.settings.groupId) {
-          resolve(page);
-          break;
-        }
-      }
-    } catch (e) {
-      // add proper logging
-    }
-  });
+    return new Promise(async (resolve, reject) => {
+        try {
+            const windows = electronApp.windows();
+            // Search for the Web Group App.
+            for (let index = 0; index < windows.length; index++) {
+                const page = windows[index];
+                // Check for the `iodesktop` service object injected in the page.
+                const iodesktop = await page.evaluate("window.iodesktop");
+
+                // Check the window group ID against the window ID contained in the `iodesktop` service object.
+                if (iodesktop && groupId === iodesktop.windowId) {
+                    resolve(page);
+                    break;
+                };
+            };
+        } catch (error) {
+            // Add proper logging.
+        };
+    });
 };
