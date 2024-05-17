@@ -11,6 +11,7 @@ const executablePath = path.join(platformDir, "io-connect-desktop.exe");
 
 let electronApp;
 let io;
+let workspacesPage;
 
 test.setTimeout(40000);
 
@@ -25,6 +26,13 @@ test.beforeAll(async () => {
 
     // Wait for the io.Connect launcher to appear.
     const { page } = await waitForAppToLoad("io-connect-desktop-toolbar", electronApp);
+
+    // Wait for the io.Connect workspaces app to appear.
+    const { page: workspacesApp } = await waitForAppToLoad("workspaces-demo", electronApp);
+    // Wait for app to initialize its io & io.workspaces api
+    await workspacesApp.waitForFunction('window.io && window.io.workspaces !== undefined');
+    // Set the Workspaces app page globally so it can be used in tests below
+    workspacesPage = workspacesApp
 
     // Initialize the `@interopio/desktop` library.
     io = await initDesktop(page);
@@ -63,13 +71,59 @@ test("Open two windows, snap them together, and manipulate the window group via 
     await webGroup.locator(`#t42-group-caption-bar-standard-buttons-close-${groupId}`).click();
 });
 
+test("Launch Client workspace and check if 'Client view' app has loaded", async () => {
+    // Open workspace using the `@interopio/desktop` library.
+    io.layouts.restore({ name: 'Client', type: 'Workspace'})
+    
+    // Locate the "Client View" app in the workspace
+    const { page } = await waitForAppToLoad("client-view", electronApp);
+
+    // Check if contents in "Client View" app are visible
+    await expect(page.locator("div.col-12.ng-scope")).toBeVisible()
+});
+
+test("Launch Client workspace and manipulate window inside", async () => {
+    const ordersWorkspaceWindowContext = await workspacesPage.evaluate(async () => {
+        // Open the "Client" workspace app using the 'workspaces' app
+        window.io.workspaces.restoreWorkspace('Client')
+
+        // Wrap onWindowLoaded in promise to wait for the window of "Client-view" app to load
+        function waitForClientViewWindow() {
+            return new Promise((resolve, reject) => {
+                window.io.workspaces.onWindowLoaded((win) => {
+                    if (win.appName === 'client-view') {
+                        resolve(win);  // Resolve the promise with the window object
+                    }
+                });
+            });
+        }
+
+         // Get the "Client-view" app window when loaded
+        const clientViewWindow = await waitForClientViewWindow();
+
+        if (clientViewWindow) {
+            // Get the underlying IOconnectWindow object
+            const ioConnectWindow = clientViewWindow.getGdWindow()
+        
+            // Update window context of IOconnectWindow
+            await ioConnectWindow.updateContext({ testKey: 'testValue' })
+        
+            // Return the updated context
+            return ioConnectWindow.getContext()
+        }
+    });
+
+    // Assert against the updated context property
+    await expect(ordersWorkspaceWindowContext.testKey).toEqual('testValue')
+});
+
 // Helper for initializing the `@interopio/desktop` library so that it can be used in the tests.
 const initDesktop = async (page) => {
     // Using the page of the first started shell app to obtain a Gateway token
     // for the library to be able to connect to the io.Connect Gateway.
     const gwToken = await page.evaluate("iodesktop.getGWToken()");
     // Initializing the library.
-    const io = await IODesktop({ auth: { gatewayToken: gwToken } });
+    const io = await IODesktop({ layouts: 'full', auth: { gatewayToken: gwToken } });
 
     return io;
 };
