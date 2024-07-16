@@ -5,7 +5,7 @@ const path = require("path");
 
 setDefaultResultOrder("ipv4first");
 
-const platformDir = `${process.env.LocalAppData}\Glue42\\GlueDesktop`;
+const platformDir = `${process.env.LocalAppData}\\Glue42\\GlueDesktop`;
 const executablePath = path.join(platformDir, "tick42-glue-desktop.exe");
 
 let electronApp;
