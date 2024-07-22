@@ -66,7 +66,7 @@ export const waitForHiddenAppToInitialize = (appName: string, electronApp: Elect
     });
 };
 
-// Helper function to wait for a wokrpsace application to be initialized.
+// Helper function to wait for a workspace application to be initialized.
 export const waitForWorkspaceToLoad = async (appWithIOWorkspaces: InteropElectronAppWrapper, workspaceAppName: string, electronApp: ElectronApplication): Promise<InteropElectronAppWrapper | undefined> => {
     const workspaceFrameId = await getNewlyOpenedFrameId(appWithIOWorkspaces);
     const workspaceApp = await getWorkspaceAppById(workspaceFrameId, electronApp);
