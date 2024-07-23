@@ -29,16 +29,11 @@ test.beforeAll(async () => {
 });
 
 test("Menu should be open by default", async () => {
-
-    await workspaceApp?.page.waitForLoadState('domcontentloaded');
-
     const menu = workspaceApp.page.locator('.menu')
     await expect(menu).toBeVisible();
 });
 
 test("Clicking close menu button should close the menu", async () => {
-    await workspaceApp.page.waitForLoadState('domcontentloaded');
-
     const menu = workspaceApp.page.locator('.menu')
     const closeMenuButton = menu?.locator('nth=0').locator('nth=0');
     closeMenuButton?.click();

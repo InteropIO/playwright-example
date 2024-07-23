@@ -62,6 +62,7 @@ export const waitForHiddenAppToInitialize = (appName: string, electronApp: Elect
 export const waitForWorkspaceToLoad = async (appWithIOWorkspaces: InteropElectronAppWrapper, workspaceAppName: string, electronApp: ElectronApplication): Promise<InteropElectronAppWrapper | undefined> => {
     const workspaceFrameId = await getNewlyOpenedFrameId(appWithIOWorkspaces);
     const workspaceApp = await getWorkspaceAppById(workspaceFrameId, electronApp);
+    await workspaceApp?.page.waitForLoadState('domcontentloaded');
     return workspaceApp;
 };
 
