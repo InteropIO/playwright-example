@@ -24,7 +24,7 @@ test.beforeAll(async () => {
         cwd: platformDir
     });
 
-    workspaceManagerApp = await waitForHiddenAppToInitialize('owx-manager', electronApp);
+    workspaceManagerApp = await waitForHiddenAppToInitialize('owx-workspace-manager', electronApp);
     workspaceApp = (await waitForWorkspaceToLoad(workspaceManagerApp, 'owx-workspace', electronApp))!;
 });
 
