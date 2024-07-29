@@ -7,7 +7,7 @@ import { InteropElectronAppWrapper, waitForHiddenAppToInitialize, waitForWorkspa
 
 setDefaultResultOrder("ipv4first");
 
-const platformDir = `C:\\Users\\vanchev\\AppData\\Local\\interop.io\\io.Connect Desktop\\Desktop`;
+const platformDir = `C:\\Program Files\\interop.io\\io.Connect Desktop\\Desktop`;
 const executablePath = path.join(platformDir, "io-connect-desktop.exe");
 
 let electronApp: ElectronApplication;
