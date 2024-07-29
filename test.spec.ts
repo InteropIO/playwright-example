@@ -18,10 +18,13 @@ test.setTimeout(60000);
 
 // Start io.Connect Desktop and wait for the default workspace to load
 test.beforeAll(async () => {
+    test.setTimeout(60000);
+
     // Start io.Connect Desktop.
     electronApp = await electron.launch({
         executablePath: executablePath,
-        cwd: platformDir
+        cwd: platformDir,
+        args: ['--', 'config=config/system.json', 'configOverrides', 'config0=config/configOverrides/system-dev.json']
     });
 
     workspaceManagerApp = await waitForHiddenAppToInitialize('owx-workspace-manager', electronApp);
@@ -34,8 +37,8 @@ test("Menu should be open by default", async () => {
 });
 
 test("Clicking close menu button should close the menu", async () => {
-    const menu = workspaceApp.page.locator('.menu')
-    const closeMenuButton = menu?.locator('nth=0').locator('nth=0');
+    const menu = workspaceApp.page.locator('.menu');
+    const closeMenuButton = workspaceApp.page.locator('#closeMenuButton');
     closeMenuButton?.click();
 
     await expect(menu).toBeHidden();
